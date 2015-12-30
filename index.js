@@ -158,7 +158,9 @@ function execute(_id, device, handler, action) {
 }
 
 function retrieveCommandFromCollection(id) {
-    return connector.collections.commands[id];
+    var collections = connector.collections();
+
+    return collections.commands[id];
 }
 
 
