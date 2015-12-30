@@ -9,6 +9,7 @@ describe("Setup", function() {
         loggerMock,
         sonumiLoggerMock,
         clientMock,
+        subscriptionPromise,
         commandObserver = rewire("../index");
 
     beforeEach(function() {
@@ -30,16 +31,13 @@ describe("Setup", function() {
             sonumiLogger: sonumiLoggerMock
         });
 
+        subscriptionPromise = new Promise(function(resolve, reject) {});
+
         clientMock = sinon.stub();
-        clientMock.subscribe = sinon.spy();
         clientMock.observe = sinon.stub().returns({});
         clientMock.collections = {'commands': []};
 
         observer = new commandObserver(clientMock);
-    });
-
-    it('should subscribe to the collection', function() {
-        assert(clientMock.subscribe.calledWith('pub_commands'));
     });
 
     it('should observe the collection', function() {

@@ -19,9 +19,6 @@ function Observer(connector)
 
     client = connector;
 
-    // subscribe to the publication
-    client.subscribe(COMMAND_PUBLICATION_NAME);
-
     // observe the publication
     var observer = client.observe(COMMAND_PUBLICATION_NAME);
     extend(observer, this);
