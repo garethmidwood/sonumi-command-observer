@@ -41,7 +41,7 @@ describe("Setup", function() {
     });
 
     it('should observe the collection', function() {
-        assert(clientMock.observe.calledWith('pub_commands'));
+        assert(clientMock.observe.calledWith('commands'));
     });
 
     it('should register new handlers', function() {

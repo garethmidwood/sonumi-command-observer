@@ -2,25 +2,24 @@ var extend = require('extend');
 var config = require('config');
 var sonumiLogger = require('sonumi-logger');
 
-const COMMAND_PUBLICATION_NAME = "pub_commands";
 const RESPONSE_EXECUTING = 'EXECUTING';
 const RESPONSE_COMPLETE = 'COMPLETE';
 const RESPONSE_FAIL = 'FAIL';
 
-var client,
+var connector,
     logger;
 
-function Observer(connector)
+function Observer(sonumiConnector)
 {
     var logDirectory = config.logging.logDir;
     logger = sonumiLogger.init(logDirectory);
     logger.addLogFile('info', logDirectory + '/command-observer-info.log', 'info');
     logger.addLogFile('errors', logDirectory + '/command-observer-error.log', 'error');
 
-    client = connector;
+    connector = sonumiConnector;
 
     // observe the publication
-    var observer = client.observe(COMMAND_PUBLICATION_NAME);
+    var observer = connector.observe('commands');
     extend(observer, this);
 
     // return the extended observer
@@ -68,7 +67,7 @@ Observer.prototype = {
 
 
     status_ack: function(id) {
-        client.call(
+        connector.call(
             'acknowledgeCommand',
             [id],
             function (err, result) {
@@ -81,7 +80,7 @@ Observer.prototype = {
         );
     },
     status_complete: function(id) {
-        client.call(
+        connector.call(
             'successCommand',
             [id],
             function (err, result) {
@@ -94,7 +93,7 @@ Observer.prototype = {
         );
     },
     status_executing: function(id) {
-        client.call(
+        connector.call(
             'alreadyRunningCommand',
             [id],
             function (err, result) {
@@ -107,7 +106,7 @@ Observer.prototype = {
         );
     },
     status_fail: function(id) {
-        client.call(
+        connector.call(
             'failedCommand',
             [id],
             function (err, result) {
@@ -159,7 +158,7 @@ function execute(_id, device, handler, action) {
 }
 
 function retrieveCommandFromCollection(id) {
-    return client.collections.commands[id];
+    return connector.collections.commands[id];
 }
 
 
