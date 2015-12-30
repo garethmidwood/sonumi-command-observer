@@ -33,6 +33,7 @@ function Observer(connector)
 Observer.prototype = {
     handlers: {},
     register_handler: function(label, handler) {
+        logger.log('Registering ' + label + ' command handler');
         this.handlers[label] = handler;
     },
     // run when a command is added
