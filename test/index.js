@@ -35,7 +35,11 @@ describe("Setup", function() {
 
         clientMock = sinon.stub();
         clientMock.observe = sinon.stub().returns({});
-        clientMock.collections = {'commands': []};
+        clientMock.collections = function() {
+            return {
+                'commands': []
+            };
+        };
 
         observer = new commandObserver(clientMock);
     });
@@ -88,11 +92,13 @@ describe("Observe Commands", function() {
         clientMock = sinon.stub();
         clientMock.subscribe = sinon.spy();
         clientMock.observe = sinon.stub().returns({});
-        clientMock.collections = {
-            'commands': [
-                {'text': 'my.test'},
-                {'text': 'my.test.action'}
-            ]
+        clientMock.collections = function() {
+            return {
+                'commands': [
+                    {'text': 'my.test'},
+                    {'text': 'my.test.action'}
+                ]
+            };
         };
 
         observer = new commandObserver(clientMock);
@@ -150,11 +156,13 @@ describe("Handlers", function() {
         clientMock = sinon.stub();
         clientMock.subscribe = sinon.spy();
         clientMock.observe = sinon.stub().returns({});
-        clientMock.collections = {
-            'commands': [
-                {'text': 'my.test'},
-                {'text': 'my.test.action'}
-            ]
+        clientMock.collections = function() {
+            return {
+                'commands': [
+                    {'text': 'my.test'},
+                    {'text': 'my.test.action'}
+                ]
+            };
         };
 
         observer = new commandObserver(clientMock);
