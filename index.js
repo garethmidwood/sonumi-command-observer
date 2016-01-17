@@ -20,6 +20,7 @@ function Observer(sonumiConnector)
 
     // observe the publication
     var observer = connector.observe('commands');
+
     extend(observer, this);
 
     // return the extended observer
@@ -133,25 +134,31 @@ function execute(_id, device, handler, action) {
             break;
         default:
             var self = this;
-
             // run command if handler/action exist
-            if (this.handlers[handler] && this.handlers[handler][action]) {
-                this.handlers[handler][action](function (responseCode) {
-                    switch (responseCode) {
-                        case RESPONSE_EXECUTING:
-                            self.status_executing(_id);
-                            break;
-                        case RESPONSE_COMPLETE:
-                            self.status_complete(_id);
-                            break;
-                        case RESPONSE_FAIL:
-                        default:
-                            self.status_fail(_id);
-                            break;
+            if (self.handlers[handler] && self.handlers[handler][action]) {
+                var executionPromise = self.handlers[handler][action]();
+
+                executionPromise.then(
+                    function (response) {
+                        switch (response) {
+                            case RESPONSE_EXECUTING:
+                                self.status_executing(_id);
+                                break;
+                            case RESPONSE_COMPLETE:
+                                self.status_complete(_id);
+                                break;
+                            case RESPONSE_FAIL:
+                            default:
+                                self.status_fail(_id);
+                                break;
+                        }
+                    },
+                    function(error) {
+                        self.status_fail(_id);
                     }
-                });
+                );
             } else {
-                this.status_fail(_id);
+                self.status_fail(_id);
             }
             break;
     }

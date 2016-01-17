@@ -1,7 +1,11 @@
-var expect = require('chai').expect,
-    assert = require('chai').assert,
+var chai   = require('chai'),
     sinon  = require('sinon'),
     rewire = require('rewire');
+
+require('sinon-as-promised');
+
+var expect = chai.expect;
+var assert = chai.assert;
 
 
 describe("Setup", function() {
@@ -58,7 +62,6 @@ describe("Setup", function() {
         expect(observer.handlers[label]).to.not.be.undefined;
     });
 });
-
 
 
 describe("Observe Commands", function() {
@@ -126,6 +129,7 @@ describe("Observe Commands", function() {
     });
 });
 
+
 describe("Handlers", function() {
     var observer,
         loggerMock,
@@ -167,56 +171,74 @@ describe("Handlers", function() {
 
         observer = new commandObserver(clientMock);
         observer.status_ack = sinon.spy();
+        observer.status_fail = sinon.spy();
+        observer.status_executing = sinon.spy();
+        observer.status_complete = sinon.spy();
     });
 
     it('should acknowledge and fail when no handler is found for a command', function() {
         var commandId = 1;
 
-        observer.status_fail = sinon.spy();
-
         observer.added(commandId);
 
-        assert(observer.status_ack.calledWith(commandId));
         assert(observer.status_fail.calledWith(commandId));
     });
 
     it('should acknowledge and fail when the command handler returns a failure status', function() {
         var commandId = 1;
 
-        observer.status_fail = sinon.spy();
+        var failingPromise = sinon.stub();
+        failingPromise.then = function (resolve, reject) {
+            reject('FAIL');
+            assert(observer.status_fail.calledWith(commandId));
+        };
 
-        observer.register_handler('test', {'action': sinon.stub().callsArgWith(0, 'FAIL') });
+        observer.register_handler(
+            'test',
+            {
+                'action': sinon.stub().returns(failingPromise)
+            }
+        );
 
         observer.added(commandId);
-
-        assert(observer.status_ack.calledWith(commandId));
-        assert(observer.status_fail.calledWith(commandId));
     });
 
     it('should acknowledge and continue when the command handler returns an executing status', function() {
         var commandId = 1;
 
-        observer.status_executing = sinon.spy();
+        var executingPromise = sinon.stub();
+        executingPromise.then = function (resolve, reject) {
+            resolve('EXECUTING');
+            assert(observer.status_executing.calledWith(commandId));
+        };
 
-        observer.register_handler('test', {'action': sinon.stub().callsArgWith(0, 'EXECUTING') });
+        observer.register_handler(
+            'test',
+            {
+                'action': sinon.stub().returns(executingPromise)
+            }
+        );
 
         observer.added(commandId);
-
-        assert(observer.status_ack.calledWith(commandId));
-        assert(observer.status_executing.calledWith(commandId));
     });
 
     it('should acknowledge and complete when the command handler returns a complete status', function() {
         var commandId = 1;
 
-        observer.status_complete = sinon.spy();
+        var completePromise = sinon.stub();
+        completePromise.then = function (resolve, reject) {
+            resolve('COMPLETE');
+            assert(observer.status_complete.calledWith(commandId));
+        };
 
-        observer.register_handler('test', {'action': sinon.stub().callsArgWith(0, 'COMPLETE') });
+        observer.register_handler(
+            'test',
+            {
+                'action': sinon.stub().returns(completePromise)
+            }
+        );
 
         observer.added(commandId);
-
-        assert(observer.status_ack.calledWith(commandId));
-        assert(observer.status_complete.calledWith(commandId));
     });
 });
 
