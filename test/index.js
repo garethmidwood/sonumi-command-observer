@@ -64,69 +64,6 @@ describe("Setup", function() {
 });
 
 
-describe("Observe Commands", function() {
-    var observer,
-        loggerMock,
-        sonumiLoggerMock,
-        clientMock,
-        commandObserver = rewire("../index");
-
-    beforeEach(function() {
-        loggerMock = sinon.stub();
-        loggerMock.log = sinon.stub();
-        loggerMock.error = sinon.stub();
-        loggerMock.addLogFile = sinon.stub();
-        sonumiLoggerMock = sinon.stub();
-        sonumiLoggerMock.init = sinon.stub().returns(loggerMock);
-
-        configMock = {
-            "logging": {
-                "logDir": "/tmp/"
-            }
-        };
-
-        commandObserver.__set__({
-            config: configMock,
-            logger: loggerMock,
-            sonumiLogger: sonumiLoggerMock,
-            execute: sinon.spy()
-        });
-
-        clientMock = sinon.stub();
-        clientMock.subscribe = sinon.spy();
-        clientMock.observe = sinon.stub().returns({});
-        clientMock.collections = function() {
-            return {
-                'commands': [
-                    {'text': 'my.test'},
-                    {'text': 'my.test.action'}
-                ]
-            };
-        };
-
-        observer = new commandObserver(clientMock);
-    });
-
-    it('should reject badly formatted commands', function() {
-        var commandId = 0;
-
-        observer.status_fail = sinon.spy();
-
-        observer.added(commandId);
-
-        assert(observer.status_fail.calledWith(commandId));
-    });
-
-    it('should execute new commands', function() {
-        var commandId = 1;
-
-        observer.added(commandId);
-
-        assert(commandObserver.__get__('execute').calledWith(commandId, 'my', 'test', 'action'));
-    });
-});
-
-
 describe("Handlers", function() {
     var observer,
         loggerMock,
@@ -173,16 +110,33 @@ describe("Handlers", function() {
         observer.status_complete = sinon.spy();
     });
 
-    it('should acknowledge and fail when no handler is found for a command', function() {
+    it('should reject badly formatted commands', function() {
+        var commandId = 0;
+
+        observer.status_fail = sinon.spy();
+
+        observer.added(commandId);
+
+        assert(observer.status_fail.calledWith(commandId));
+    });
+
+    it('should acknowledge correctly formatted commands', function() {
         var commandId = 1;
 
         observer.added(commandId);
 
         assert(observer.status_ack.calledWith(commandId));
+    });
+
+    it('should fail when no handler is found for a command', function() {
+        var commandId = 1;
+
+        observer.added(commandId);
+
         assert(observer.status_fail.calledWith(commandId));
     });
 
-    it('should acknowledge and fail when the command handler returns a failure status', function() {
+    it('should fail when the command handler returns a failure status', function() {
         var commandId = 1;
 
         var failingPromise = sinon.stub();
@@ -199,11 +153,9 @@ describe("Handlers", function() {
         );
 
         observer.added(commandId);
-
-        assert(observer.status_ack.calledWith(commandId));
     });
 
-    it('should acknowledge and continue when the command handler returns an executing status', function() {
+    it('should continue when the command handler returns an executing status', function() {
         var commandId = 1;
 
         var executingPromise = sinon.stub();
@@ -220,11 +172,9 @@ describe("Handlers", function() {
         );
 
         observer.added(commandId);
-
-        assert(observer.status_ack.calledWith(commandId));
     });
 
-    it('should acknowledge and complete when the command handler returns a complete status', function() {
+    it('should complete when the command handler returns a complete status', function() {
         var commandId = 1;
 
         var completePromise = sinon.stub();
@@ -241,8 +191,6 @@ describe("Handlers", function() {
         );
 
         observer.added(commandId);
-
-        assert(observer.status_ack.calledWith(commandId));
     });
 });
 

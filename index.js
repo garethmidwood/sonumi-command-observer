@@ -39,20 +39,7 @@ Observer.prototype = {
 
         logger.log('[ADDED] ' + command + ' [' + _id + ']');
 
-        var commandParts = command.text.split('.');
-
-        // make sure we have the correct number of parts for the command
-        if (commandParts.length != 3) {
-            logger.error('[ADDED] Incorrect number of parameters in command: ' + command + ' [' + _id + ']');
-            this.status_fail(_id);
-            return;
-        }
-
-        var device  = commandParts[0];
-        var handler = commandParts[1];
-        var action  = commandParts[2];
-
-        execute.call(this, _id, device, handler, action);
+        execute.call(this, _id, command);
     },
     changed: function changed(id, oldFields, clearedFields, newFields) {
         logger.log('[CHANGED] old field values: ' + JSON.stringify(oldFields));
@@ -119,7 +106,20 @@ Observer.prototype = {
 };
 
 
-function execute(_id, device, handler, action) {
+function execute(_id, command) {
+    var commandParts = command.text.split('.');
+
+    // make sure we have the correct number of parts for the command
+    if (commandParts.length != 3) {
+        logger.error('[ADDED] Incorrect number of parameters in command: ' + command + ' [' + _id + ']');
+        this.status_fail(_id);
+        return;
+    }
+
+    var device  = commandParts[0];
+    var handler = commandParts[1];
+    var action  = commandParts[2];
+
     // acknowledge receipt of command
     this.status_ack(_id);
 
