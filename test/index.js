@@ -117,14 +117,11 @@ describe("Observe Commands", function() {
         assert(observer.status_fail.calledWith(commandId));
     });
 
-    it('should acknowledge and execute new commands', function() {
+    it('should execute new commands', function() {
         var commandId = 1;
-
-        observer.status_ack = sinon.spy();
 
         observer.added(commandId);
 
-        assert(observer.status_ack.calledWith(commandId));
         assert(commandObserver.__get__('execute').calledWith(commandId, 'my', 'test', 'action'));
     });
 });
@@ -181,6 +178,7 @@ describe("Handlers", function() {
 
         observer.added(commandId);
 
+        assert(observer.status_ack.calledWith(commandId));
         assert(observer.status_fail.calledWith(commandId));
     });
 
@@ -201,6 +199,8 @@ describe("Handlers", function() {
         );
 
         observer.added(commandId);
+
+        assert(observer.status_ack.calledWith(commandId));
     });
 
     it('should acknowledge and continue when the command handler returns an executing status', function() {
@@ -220,6 +220,8 @@ describe("Handlers", function() {
         );
 
         observer.added(commandId);
+
+        assert(observer.status_ack.calledWith(commandId));
     });
 
     it('should acknowledge and complete when the command handler returns a complete status', function() {
@@ -239,6 +241,8 @@ describe("Handlers", function() {
         );
 
         observer.added(commandId);
+
+        assert(observer.status_ack.calledWith(commandId));
     });
 });
 

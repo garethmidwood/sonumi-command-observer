@@ -52,9 +52,6 @@ Observer.prototype = {
         var handler = commandParts[1];
         var action  = commandParts[2];
 
-        // acknowledge receipt of command
-        this.status_ack(_id);
-
         execute.call(this, _id, device, handler, action);
     },
     changed: function changed(id, oldFields, clearedFields, newFields) {
@@ -123,6 +120,9 @@ Observer.prototype = {
 
 
 function execute(_id, device, handler, action) {
+    // acknowledge receipt of command
+    this.status_ack(_id);
+
     switch (device) {
         case 'sonumi':
             // TODO: store list of connected devices in Mongo
