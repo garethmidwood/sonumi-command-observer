@@ -97,8 +97,8 @@ describe("Handlers", function() {
         clientMock.collections = function() {
             return {
                 'commands': [
-                    {'text': 'my.test'},
-                    {'text': 'my.test.action'}
+                    {'actionId': 'ASfsdbdsfo'},
+                    {'actionId': 'ASfsdbdsfosdgffg'}
                 ]
             };
         };

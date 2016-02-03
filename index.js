@@ -107,62 +107,48 @@ Observer.prototype = {
 
 
 function execute(_id, command) {
-    var commandParts = command.text.split('.');
+    var actionId = command.actionId;
 
     // make sure we have the correct number of parts for the command
-    if (commandParts.length != 3) {
-        logger.error('[ADDED] Incorrect number of parameters in command: ' + command + ' [' + _id + ']');
+    if (!actionId) {
+        logger.error('[ADDED] Action ID missing from command with ID: [' + _id + ']');
         this.status_fail(_id);
         return;
     }
 
-    var device  = commandParts[0];
-    var handler = commandParts[1];
-    var action  = commandParts[2];
-
     // acknowledge receipt of command
     this.status_ack(_id);
 
-    switch (device) {
-        case 'sonumi':
-            // TODO: store list of connected devices in Mongo
-            // connected devices should automatically update on the server
-            // with this mongo collection.
-            // this 'sonumi' case should be used for setting up schedules
-            logger.log('requested connected devices list');
-            this.status_complete(_id);
-            break;
-        default:
-            var self = this;
-            // run command if handler/action exist
-            if (self.handlers[handler] && self.handlers[handler][action]) {
-                var executionPromise = self.handlers[handler][action]();
+    var self = this;
 
-                executionPromise.then(
-                    function (response) {
-                        switch (response) {
-                            case RESPONSE_EXECUTING:
-                                self.status_executing(_id);
-                                break;
-                            case RESPONSE_COMPLETE:
-                                self.status_complete(_id);
-                                break;
-                            case RESPONSE_FAIL:
-                            default:
-                                self.status_fail(_id);
-                                break;
-                        }
-                    },
-                    function(error) {
+    // run command if handler/action exist
+    if (self.handlers[actionId]) {
+        var executionPromise = self.handlers[actionId]();
+
+        executionPromise.then(
+            function (response) {
+                switch (response) {
+                    case RESPONSE_EXECUTING:
+                        self.status_executing(_id);
+                        break;
+                    case RESPONSE_COMPLETE:
+                        self.status_complete(_id);
+                        break;
+                    case RESPONSE_FAIL:
+                    default:
                         self.status_fail(_id);
-                    }
-                );
-            } else {
+                        break;
+                }
+            },
+            function(error) {
                 self.status_fail(_id);
             }
-            break;
+        );
+    } else {
+        self.status_fail(_id);
     }
 }
+
 
 function retrieveCommandFromCollection(id) {
     var collections = connector.collections();
