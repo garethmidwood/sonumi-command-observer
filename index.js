@@ -2,29 +2,37 @@ var extend = require('extend');
 var config = require('config');
 var sonumiLogger = require('sonumi-logger');
 
-const RESPONSE_EXECUTING = 'EXECUTING';
-const RESPONSE_COMPLETE = 'COMPLETE';
-const RESPONSE_FAIL = 'FAIL';
+var apiClient,
+    logger,
+    deviceManager;
 
-var connector,
-    logger;
-
-function Observer(sonumiConnector)
+function Observer(dependencies)
 {
+    if (!dependencies || !dependencies.devicemanager) {
+        throw new Error('Device manager dependency is required');
+    } else if (!dependencies.client) {
+        throw new Error('API client dependency is required');
+    } else {
+        deviceManager = dependencies.devicemanager;
+        apiClient = dependencies.client;
+    }
+
     var logDirectory = config.logging.logDir;
     logger = sonumiLogger.init(logDirectory);
     logger.addLogFile('info', logDirectory + '/command-observer-info.log', 'info');
     logger.addLogFile('errors', logDirectory + '/command-observer-error.log', 'error');
 
-    connector = sonumiConnector;
+    var self = this;
 
-    // observe the publication
-    var observer = connector.observe('commands');
-
-    extend(observer, this);
-
-    // return the extended observer
-    return observer;
+    apiClient.subscribe('pub_commands').then(
+        function() {
+            var observer = apiClient.observe('commands');
+            extend(observer, self);
+        },
+        function() {
+            throw new Error('API Client failed to subscribe to commands');
+        }
+    );
 }
 
 Observer.prototype = {
@@ -37,22 +45,20 @@ Observer.prototype = {
     added: function(_id) {
         var command = retrieveCommandFromCollection(_id);
 
-        logger.log('[ADDED] ' + command + ' [' + _id + ']');
+        logger.log('[ADDED] command with id ' + _id);
 
-        execute.call(this, _id, command);
+        deviceManager.trigger(_id, command);
     },
-    changed: function changed(id, oldFields, clearedFields, newFields) {
+    changed: function changed(_id, oldFields, clearedFields, newFields) {
         logger.log('[CHANGED] old field values: ' + JSON.stringify(oldFields));
         logger.log('[CHANGED] cleared fields: ' + JSON.stringify(clearedFields));
         logger.log('[CHANGED] new fields: ' + JSON.stringify(newFields));
     },
-    removed: function removed(id, oldValue) {
+    removed: function removed(_id, oldValue) {
         logger.log('[REMOVED] ' + JSON.stringify(oldValue));
     },
-
-
     status_ack: function(id) {
-        connector.call(
+        apiClient.call(
             'acknowledgeCommand',
             [id],
             function (err, result) {
@@ -65,7 +71,7 @@ Observer.prototype = {
         );
     },
     status_complete: function(id) {
-        connector.call(
+        apiClient.call(
             'successCommand',
             [id],
             function (err, result) {
@@ -78,7 +84,7 @@ Observer.prototype = {
         );
     },
     status_executing: function(id) {
-        connector.call(
+        apiClient.call(
             'alreadyRunningCommand',
             [id],
             function (err, result) {
@@ -91,7 +97,7 @@ Observer.prototype = {
         );
     },
     status_fail: function(id) {
-        connector.call(
+        apiClient.call(
             'failedCommand',
             [id],
             function (err, result) {
@@ -106,52 +112,8 @@ Observer.prototype = {
 };
 
 
-function execute(_id, command) {
-    var actionId = command.actionId;
-
-    // make sure we have the correct number of parts for the command
-    if (!actionId) {
-        logger.error('[ADDED] Action ID missing from command with ID: [' + _id + ']');
-        this.status_fail(_id);
-        return;
-    }
-
-    // acknowledge receipt of command
-    this.status_ack(_id);
-
-    var self = this;
-
-    // run command if handler/action exist
-    if (self.handlers[actionId]) {
-        var executionPromise = self.handlers[actionId]();
-
-        executionPromise.then(
-            function (response) {
-                switch (response) {
-                    case RESPONSE_EXECUTING:
-                        self.status_executing(_id);
-                        break;
-                    case RESPONSE_COMPLETE:
-                        self.status_complete(_id);
-                        break;
-                    case RESPONSE_FAIL:
-                    default:
-                        self.status_fail(_id);
-                        break;
-                }
-            },
-            function(error) {
-                self.status_fail(_id);
-            }
-        );
-    } else {
-        self.status_fail(_id);
-    }
-}
-
-
 function retrieveCommandFromCollection(id) {
-    var collections = connector.collections();
+    var collections = apiClient.collections();
 
     return collections.commands[id];
 }
