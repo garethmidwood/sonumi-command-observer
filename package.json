@@ -23,7 +23,7 @@
   "dependencies": {
     "config": "^1.17.1",
     "extend": "^3.0.0",
-    "sonumi-logger": "git+ssh://git@github.com/garethmidwood/sonumi-logger.git"
+    "sonumi-logger": "https://github.com/garethmidwood/sonumi-logger/archive/master.tar.gz"
   },
   "devDependencies": {
     "chai": "^3.4.1",
